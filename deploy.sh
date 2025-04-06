@@ -16,6 +16,22 @@ fi
 
 echo " Toutes les dépendances sont présentes."
 
+# Télécharger l'image Redis
+echo "Téléchargement de l'image Redis depuis Docker Hub..."
+docker pull redis
+if [ $? -ne 0 ]; then
+    echo "Erreur lors du téléchargement de l'image Redis."
+    exit 1
+fi
+
+# Vérifier si l'utilisateur est dans le groupe docker
+if ! groups $USER | grep -q '\bdocker\b'; then
+    echo "Ajout de l'utilisateur $USER au groupe docker..."
+    sudo usermod -aG docker $USER
+    echo "Vous devez vous déconnecter et vous reconnecter pour appliquer les changements."
+    exit 0
+fi
+
 ##  Démarrage de Minikube si non actif
 if ! minikube status | grep -q "host: Running"; then
     echo "  Minikube n'est pas actif. Lancement du cluster Minikube..."
@@ -34,29 +50,29 @@ echo "========================================================="
 
 ##  Redis (Master + Replicas)
 echo " Déploiement de Redis Master..."
-kubectl apply -f redis/redis-master-deployment.yaml
-kubectl apply -f redis/redis-master-service.yaml
+kubectl apply -f redis/redis-master-deployment.yml
+kubectl apply -f redis/redis-master-service.yml
 
 echo " Déploiement de Redis Replicas..."
-kubectl apply -f redis/redis-replica-deployment.yaml
-kubectl apply -f redis/redis-replica-service.yaml
-kubectl apply -f redis/redis-replica-hpa.yaml
+kubectl apply -f redis/redis-replica-deployment.yml
+kubectl apply -f redis/redis-replica-service.yml
+kubectl apply -f redis/redis-replica-hpa.yml
 
 echo " Redis Master & Replicas déployés avec succès !"
 echo "---------------------------------------------------------"
 
 ##  Backend Node.js
 echo " Déploiement du backend node-redis..."
-kubectl apply -f node-redis/node-redis-deployment.yaml
-kubectl apply -f node-redis/node-redis-service.yaml
+kubectl apply -f node-redis/node-redis-deployment.yml
+kubectl apply -f node-redis/node-redis-service.yml
 
 echo " Backend redis-node déployé avec succès !"
 echo "---------------------------------------------------------"
 
 ##  Frontend React
 echo " Déploiement du frontend redis-react..."
-kubectl apply -f front-redis/frontend-deployment.yaml
-kubectl apply -f front-redis/frontend-service.yaml
+kubectl apply -f front-redis/frontend-deployment.yml
+kubectl apply -f front-redis/frontend-service.yml
 
 echo " Frontend redis-react déployé avec succès !"
 echo "---------------------------------------------------------"
@@ -83,17 +99,17 @@ echo "---------------------------------------------------------"
 
 ##  Prometheus
 echo " Déploiement de Prometheus..."
-kubectl apply -f prom/prom-configmap.yaml
-kubectl apply -f prom/prom-deployment.yaml
-kubectl apply -f prom/prom-service.yaml
+kubectl apply -f prom/prom-configmap.yml
+kubectl apply -f prom/prom-deployment.yml
+kubectl apply -f prom/prom-service.yml
 
 echo " Prometheus déployé avec succès !"
 echo "---------------------------------------------------------"
 
 ##  Grafana
 echo " Déploiement de Grafana..."
-kubectl apply -f graf/graf-deployment.yaml
-kubectl apply -f graf/graf-service.yaml
+kubectl apply -f graf/graf-deployment.yml
+kubectl apply -f graf/graf-service.yml
 
 echo " Grafana déployé avec succès !"
 echo "---------------------------------------------------------"
@@ -141,10 +157,10 @@ echo ""
 ##  URLs d'accès via Minikube
 echo " Accès aux services via NodePort :"
 echo "------------------------------------------"
-echo " Backend Node      → $(minikube service redis-node --url)"
-echo " Frontend React   → $(minikube service redis-react --url)"
-echo " Prometheus        → $(minikube service prometheus --url)"
-echo " Grafana           → $(minikube service grafana --url)"
+echo " Backend Node      → $(minikube service node-redis --url)"
+echo " Frontend React   → $(minikube service frontend --url)"
+echo " Prometheus        → $(minikube service prometheus-service --url)"
+echo " Grafana           → $(minikube service grafana-service --url)"
 echo ""
 echo "  Pour vous connecter à Grafana, utilisez :"
 echo "   - identifiant : admin"
